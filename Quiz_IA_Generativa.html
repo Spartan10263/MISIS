@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quiz · IA generativa</title>
+<style>
+:root{
+  --bg:#05030c; --card:#120a26; --card2:#2a1b52; --pur:#8b5cf6; --purl:#c4b5fd;
+  --txt:#f5f3ff; --mut:#a79bc9; --ok:#34d399; --bad:#f87171;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:Calibri,"Segoe UI",system-ui,sans-serif; color:var(--txt); background:var(--bg);
+  display:flex; align-items:center; justify-content:center; overflow-x:hidden; position:relative;
+}
+/* fundo com círculos como no PowerPoint */
+body::before,body::after{content:"";position:fixed;border-radius:50%;pointer-events:none;z-index:0}
+body::before{width:60vmax;height:60vmax;right:-20vmax;top:-25vmax;
+  background:radial-gradient(circle,rgba(139,92,246,.28),transparent 65%);
+  box-shadow:0 0 0 2vmax rgba(139,92,246,.05),0 0 0 5vmax rgba(139,92,246,.04),0 0 0 9vmax rgba(139,92,246,.03)}
+body::after{width:70vmax;height:40vmax;left:15vw;bottom:-28vmax;border-radius:50%;
+  background:radial-gradient(ellipse,rgba(168,85,247,.55),transparent 65%)}
+main{position:relative;z-index:1;width:min(1000px,92vw);padding:3vh 0}
+.tag{letter-spacing:.25em;font-weight:700;font-size:clamp(12px,1.4vw,16px);color:var(--purl);text-transform:uppercase}
+h1{font-size:clamp(30px,5vw,56px);color:var(--pur);margin:.15em 0 .4em}
+.progress{display:flex;align-items:center;gap:16px;margin-bottom:clamp(14px,3vh,28px)}
+.progress .label{font-weight:700;font-size:clamp(16px,2vw,22px);color:var(--purl);white-space:nowrap}
+.bar{flex:1;height:10px;border-radius:99px;background:var(--card2);overflow:hidden}
+.bar i{display:block;height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,var(--pur),#c084fc);transition:width .5s ease}
+.card{background:rgba(18,10,38,.85);border:1.5px solid var(--pur);border-radius:22px;
+  padding:clamp(18px,3.5vw,40px);backdrop-filter:blur(6px);animation:in .45s ease both}
+@keyframes in{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+.q{display:flex;gap:18px;align-items:center;margin-bottom:clamp(14px,3vh,28px)}
+.num{flex:none;width:clamp(44px,6vw,64px);height:clamp(44px,6vw,64px);border-radius:50%;background:var(--pur);
+  display:grid;place-items:center;font-weight:700;font-size:clamp(20px,3vw,30px);color:#fff}
+.q h2{font-size:clamp(22px,3.4vw,38px);line-height:1.2}
+.opts{display:grid;gap:clamp(10px,1.8vh,16px)}
+.opt{display:flex;align-items:center;gap:16px;text-align:left;font:inherit;color:var(--txt);cursor:pointer;
+  background:var(--card);border:1.5px solid rgba(139,92,246,.55);border-radius:16px;
+  padding:clamp(12px,2vh,20px) clamp(14px,2vw,24px);font-size:clamp(17px,2.4vw,27px);
+  transition:transform .15s,border-color .15s,background .15s}
+.opt:hover:not(:disabled){transform:translateX(6px);border-color:var(--purl);background:var(--card2)}
+.opt:disabled{cursor:default}
+.opt b{flex:none;width:1.7em;height:1.7em;border-radius:50%;display:grid;place-items:center;
+  background:var(--card2);color:var(--purl);font-size:.8em}
+.opt.ok{border-color:var(--ok);background:rgba(52,211,153,.16)}
+.opt.ok b{background:var(--ok);color:#052e1f}
+.opt.bad{border-color:var(--bad);background:rgba(248,113,113,.16);animation:shake .5s}
+.opt.bad b{background:var(--bad);color:#3b0a0a}
+.opt.dim{opacity:.45}
+.opt .mark{margin-left:auto;font-size:1.2em;font-weight:700}
+.opt.ok .mark{color:var(--ok);animation:pop .4s}
+.opt.bad .mark{color:var(--bad);animation:pop .4s}
+@keyframes shake{10%,90%{transform:translateX(-3px)}20%,80%{transform:translateX(6px)}30%,50%,70%{transform:translateX(-10px)}40%,60%{transform:translateX(10px)}}
+@keyframes pop{from{transform:scale(0)}to{transform:scale(1)}}
+.feedback{min-height:2.2em;margin-top:clamp(12px,2vh,20px);font-size:clamp(16px,2.2vw,24px);font-weight:700}
+.feedback.ok{color:var(--ok)}.feedback.bad{color:var(--bad)}
+.foot{display:flex;justify-content:flex-end;margin-top:8px}
+button.main{font:inherit;font-weight:700;font-size:clamp(17px,2.2vw,24px);color:#fff;border:0;cursor:pointer;
+  background:var(--pur);padding:.6em 1.8em;border-radius:99px;transition:transform .15s,background .15s;animation:pop .3s}
+button.main:hover{transform:scale(1.05);background:#9d77f8}
+.hidden{display:none!important}
+.final{text-align:center;padding:clamp(10px,3vh,30px) 0}
+.score{font-size:clamp(70px,14vw,150px);font-weight:800;color:var(--pur);line-height:1}
+.final p{font-size:clamp(22px,3.6vw,40px);margin:.5em 0 1em;line-height:1.25}
+#fx{position:fixed;inset:0;pointer-events:none;z-index:5}
+.flash{position:fixed;inset:0;pointer-events:none;z-index:4;opacity:0}
+.flash.ok{animation:fl .6s;background:radial-gradient(circle,rgba(52,211,153,.25),transparent 70%)}
+.flash.bad{animation:fl .6s;background:radial-gradient(circle,rgba(248,113,113,.25),transparent 70%)}
+@keyframes fl{0%{opacity:1}100%{opacity:0}}
+</style>
+</head>
+<body>
+<canvas id="fx"></canvas><div id="flash" class="flash"></div>
+<main>
+  <div class="tag">IA generativa · Quiz</div>
+  <h1>Perguntas</h1>
+  <div id="quiz">
+    <div class="progress"><span class="label" id="lbl"></span><div class="bar"><i id="bar"></i></div></div>
+    <section class="card" id="card">
+      <div class="q"><div class="num" id="num"></div><h2 id="qt"></h2></div>
+      <div class="opts" id="opts"></div>
+      <div class="feedback" id="fb"></div>
+      <div class="foot"><button class="main hidden" id="next">Seguinte →</button></div>
+    </section>
+  </div>
+  <section class="card final hidden" id="final">
+    <div class="score" id="score"></div>
+    <p id="msg"></p>
+    <button class="main" id="again">Recomeçar</button>
+  </section>
+</main>
+<script>
+const QS=[
+ {q:"Para que serve a tokenização?",o:["Para ordenar alfabeticamente as palavras","Dividir o texto em unidades mais pequenas","Para converter texto em código binário"],c:1},
+ {q:"O que define o prompt de sistema?",o:["O pedido concreto do utilizador","Define o contexto e comportamento","O preço do modelo"],c:1},
+ {q:"O que é um large language model (LLM)?",o:["Um tipo de IA projetado para gerar texto humanizado","Um modelo que processa imagens e não texto","Um motor de pesquisa"],c:0},
+ {q:"O que são embeddings?",o:["Palavras extra adicionadas por um modelo","Modelos de linguagem pequenos usados para tarefas específicas","Representações baseadas em vetores dos tokens que capturam o seu sentido semântico"],c:2}
+];
+const $=id=>document.getElementById(id);
+let i=0,score=0,locked=false;
+function show(){
+  locked=false;const d=QS[i];
+  $("lbl").textContent=`Pergunta ${i+1}/${QS.length}`;
+  $("bar").style.width=(i/QS.length*100)+"%";
+  $("num").textContent=i+1;$("qt").textContent=d.q;
+  $("fb").textContent="";$("fb").className="feedback";
+  $("next").classList.add("hidden");
+  const o=$("opts");o.innerHTML="";
+  d.o.forEach((t,k)=>{const b=document.createElement("button");b.className="opt";
+    b.innerHTML=`<b>${"ABC"[k]}</b><span>${t}</span><span class="mark"></span>`;
+    b.onclick=()=>pick(k);o.appendChild(b)});
+  const c=$("card");c.style.animation="none";void c.offsetWidth;c.style.animation="";
+}
+function pick(k){
+  if(locked)return;locked=true;const d=QS[i],bs=[...document.querySelectorAll(".opt")];
+  bs.forEach((b,j)=>{b.disabled=true;if(j!==k&&j!==d.c)b.classList.add("dim")});
+  const fl=$("flash");fl.className="flash";void fl.offsetWidth;
+  if(k===d.c){score++;bs[k].classList.add("ok");bs[k].querySelector(".mark").textContent="✓";
+    $("fb").textContent="Certo! 🎉";$("fb").className="feedback ok";fl.className="flash ok";confetti();}
+  else{bs[k].classList.add("bad");bs[k].querySelector(".mark").textContent="✗";
+    bs[d.c].classList.add("ok");bs[d.c].querySelector(".mark").textContent="✓";
+    $("fb").textContent=`Errado. A resposta certa era a ${"ABC"[d.c]}.`;$("fb").className="feedback bad";fl.className="flash bad";}
+  $("bar").style.width=((i+1)/QS.length*100)+"%";
+  const n=$("next");n.textContent=i===QS.length-1?"Ver resultado →":"Seguinte →";n.classList.remove("hidden");
+}
+$("next").onclick=()=>{ if(i<QS.length-1){i++;show()} else end() };
+function end(){
+  $("quiz").classList.add("hidden");$("final").classList.remove("hidden");
+  $("score").textContent=`${score}/${QS.length}`;
+  const t=`Acertaram ${score}/${QS.length}`;
+  $("msg").textContent = score>=3 ? `${t}, parabéns, estiveram atentos!`
+    : score===QS.length-2 ? `${t}, não foi mau, mas podiam estar mais atentos!`
+    : `${t}, deviam ter estado mais atentos. Para a próxima, prestem mais atenção!`;
+  if(score>=3)confetti(true);
+}
+$("again").onclick=()=>{i=0;score=0;$("final").classList.add("hidden");$("quiz").classList.remove("hidden");show()};
+// confetti
+const cv=$("fx"),cx=cv.getContext("2d");let P=[],run=false;
+function fit(){cv.width=innerWidth;cv.height=innerHeight}addEventListener("resize",fit);fit();
+function confetti(big){
+  const n=big?220:110,cols=["#8b5cf6","#c4b5fd","#22d3ee","#34d399","#f5f3ff","#c084fc"];
+  for(let k=0;k<n;k++)P.push({x:innerWidth/2+(Math.random()-.5)*200,y:innerHeight*.55,
+    vx:(Math.random()-.5)*(big?22:16),vy:-Math.random()*(big?20:15)-4,s:6+Math.random()*7,
+    r:Math.random()*6,vr:(Math.random()-.5)*.4,c:cols[k%cols.length],l:1});
+  if(!run){run=true;requestAnimationFrame(tick)}
+}
+function tick(){
+  cx.clearRect(0,0,cv.width,cv.height);
+  P.forEach(p=>{p.vy+=.45;p.x+=p.vx;p.y+=p.vy;p.vx*=.99;p.r+=p.vr;p.l-=.009;
+    cx.save();cx.globalAlpha=Math.max(p.l,0);cx.translate(p.x,p.y);cx.rotate(p.r);cx.fillStyle=p.c;cx.fillRect(-p.s/2,-p.s/4,p.s,p.s/2);cx.restore()});
+  P=P.filter(p=>p.l>0&&p.y<cv.height+20);
+  if(P.length)requestAnimationFrame(tick);else{run=false;cx.clearRect(0,0,cv.width,cv.height)}
+}
+show();
+</script>
+</body>
+</html>
